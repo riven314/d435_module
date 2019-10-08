@@ -76,8 +76,67 @@ def feed_model(model, blob):
     return out
 
 
-def plot_prediction():
-    pass
+def unpack_model_output(out_last):
+    """
+    input:
+        out_last of the i-th prediction is out[0, 0, i, :]
+    output:
+        label -- float, label number
+        conf -- float, confidence of prediction
+        xmin -- float, relative position of bounding box
+        ymin -- float, relative position of bounding box
+        xmax -- float, relative position of bounding box
+        ymax -- float, relative position of bounding box
+    """
+    _, label, conf, xmin, ymin, xmax, ymax = out_last
+    return label, conf, xmin, ymin, xmax, ymax
+
+
+def write_a_box_on_img(img, text, box_tup, expect_height):
+    """
+    write a single bounding box and text on an image IN-PLACE
+
+    input:
+        img -- np array, image to be added bounding box and label text
+        text -- str, text added on the image (typically a label name)
+        box_tup -- tuple, (xmin, ymin, xmax, ymax)
+        expect_height -- int, expect size of image (both width and height)
+    output:
+        img -- np array, image with a bounding box and label added
+    """
+    xmin, ymin, xmax, ymax = box_tup
+    cv2.rectangle(img, 
+                  (int(xmin * expect_height), int(ymin * expect_height)), 
+                  (int(xmax * expect_height), int(ymax * expect_height)), 
+                  (255, 255, 255),  # color
+                  2) # thickness
+    cv2.putText(img, text, 
+                (int(xmin * expect_height), int(ymin * expect_height) - 5),
+                cv2.FONT_HERSHEY_COMPLEX, 
+                0.5, # font scale
+                (255,255,255)) # color
+    return img
+
+
+def plot_prediction(img, out, class_name, expect_height = 300):
+    """
+    plot bounding boxes with labels on an image with COPY
+
+    input:
+        img -- np array, (expect_height, expect_height, 3), image for model input 
+        out -- np array, (., ., # predictions, prediction output)
+        expect_height -- int, expect size of img (both width and height)
+    """
+    # fail fast sanity check
+    h, w, _ = img.shape
+    assert h == w == expect_height, 'WRONG SIZE IN img AGAINST expect_height'
+    # make a copy to avoid contamination
+    for i, out_last in enumerate(out[0, 0, :, :]):
+        label_id, conf, xmin, ymin, xmax, ymax = unpack_model_output(out_last)
+        label_name = class_name[label_id]
+        box_tup = (xmin, ymin, xmax, ymax)
+         
+    
 
 if __name__ == '__main__':
     pass
