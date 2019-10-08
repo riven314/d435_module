@@ -13,7 +13,8 @@ REFERENCE
     - https://github.com/IntelRealSense/librealsense/issues/1284
 
 LOG
-[06/10/2019]
+[08/10/2019]
+- currently, RGB image and D image are not aligned in viewpoint
 
 """
 import os
@@ -61,15 +62,18 @@ def warmup_camera(config, n_trial = 10):
     return pipeline
 
 
-def stream_camera(config, frame_limit, is_process_depth = False):
+def stream_camera(config, frame_limit, is_process_depth = False, is_align = True):
     """
     input:
         config -- rs.config class instance
         frame_limit -- int, number of frames to be print (if None, then endless stream)
         is_process_depth -- bool, whether apply filters on the depth frames
+        is_align -- bool, whether align the viewpoint of RGB image and Depth image
     """
     pipeline = warmup_camera(config)
     frame_cnt = 0
+    if is_align:
+        align = rs.align(rs.stream.color)
     while True:
         # retrieve rgb and depth frames
         if frame_cnt == frame_limit:
@@ -78,6 +82,9 @@ def stream_camera(config, frame_limit, is_process_depth = False):
         # frame waiting time is a bottleneck, lower resolution can improve this
         frames = pipeline.wait_for_frames() 
         frame_cnt += 1
+        # RGBD alignment with respect to RGB image
+        if is_align: 
+            frames = align.process(frames)
         rgb_frame = frames.get_color_frame()
         depth_frame = frames.get_depth_frame()
         if not rgb_frame or not depth_frame:
