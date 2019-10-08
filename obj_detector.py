@@ -19,21 +19,44 @@ LOG
 - SSD MobileNet only support square image so far ...
 - need to conversion between rectangular image to square image
 """
+import os
+import sys
+
 import numpy as np
 import cv2
 
+
+def get_class_name(model_type = 'SSD'):
+    """
+    get label name for different models
+
+    input:
+        model_type -- str, 'SSD' ... etc
+    """
+    if model_type == 'SSD':
+        label = ("background", "aeroplane", "bicycle", "bird", "boat",
+                "bottle", "bus", "car", "cat", "chair",
+                "cow", "diningtable", "dog", "horse",
+                "motorbike", "person", "pottedplant",
+                "sheep", "sofa", "train", "tvmonitor")
+    return label
+
+
 def load_model(prototxt_path, model_path):
-    model = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
-    print('MODEL LOADED IN')
     print('prototxt_path: {}'.format(prototxt_path))
     print('model_path: {}'.format(model_path))
+    # fail fast
+    assert os.path.isfile(prototxt_path), 'WRONG INPUT prototxt_path'
+    assert os.path.isfile(model_path), 'WRONG INPUT model_path'
+    model = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
+    print('MODEL LOADED IN')
     return model
 
 
-def cv2_normalize(img, scale = 0.007843, mean_val = 127.53, height = 300)
+def cv2_normalize(img, scale = 0.007843, mean_val = 127.53, height = 300):
     """
     handler for normalizing the image before feeding it into model 
-    default is mean and scale for SSD MobileNet 
+    default is scalar mean and scalar scale for SSD MobileNet, and image input is a square
 
     input:
         img -- np array, (h, w, c)
@@ -41,7 +64,7 @@ def cv2_normalize(img, scale = 0.007843, mean_val = 127.53, height = 300)
         mean_val -- float/ list, channel-wise mean
         height -- int, size of model input
     output:
-        blob -- image after pre-processing
+        blob -- np array, (batch, c, h, w), image after pre-processing
     """
     blob = cv2.dnn.blobFromImage(img, scale, (height, height), mean_val, False)
     return blob
@@ -52,5 +75,10 @@ def feed_model(model, blob):
     out = model.forward('detection_out')
     return out
 
-################## TEST MODULE ##################
+
+def plot_prediction():
+    pass
+
+if __name__ == '__main__':
+    pass
 
