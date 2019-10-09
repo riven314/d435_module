@@ -1,22 +1,3 @@
-"""
-AUTHOR: Alex Lau
-
-SUMMARY
-do all the heavy-lifting jobs for real-time streaming and image processing
-
-REFERENCE
-1. depth postprocessing parameters: 
-    - discussion 1: https://github.com/IntelRealSense/librealsense/issues/2088
-    - discussion 2: https://github.com/IntelRealSense/librealsense/blob/master/doc/post-processing-filters.md
-    - jupyter demo: https://github.com/IntelRealSense/librealsense/blob/jupyter/notebooks/depth_filters.ipynb
-2. depth image is halved with decimation
-    - https://github.com/IntelRealSense/librealsense/issues/1284
-
-LOG
-[08/10/2019]
-- currently, RGB image and D image are not aligned in viewpoint
-
-"""
 import os
 import sys
 import time
@@ -29,7 +10,6 @@ def filter_depth(frame):
     """
     some filtering processes will greatly decrease FPS (e.g. spatial)
     decimation process will reduce image size exponentially
-
     reference: https://github.com/IntelRealSense/librealsense/blob/jupyter/notebooks/depth_filters.ipynb
     """
     # setup filter processes
@@ -62,7 +42,7 @@ def warmup_camera(config, n_trial = 10):
     return pipeline
 
 
-def stream_camera(config, frame_limit, is_process_depth = False, is_align = True):
+def stream_camera(config, frame_limit, is_process_depth = False, is_align = True, show = False):
     """
     input:
         config -- rs.config class instance
@@ -102,13 +82,15 @@ def stream_camera(config, frame_limit, is_process_depth = False, is_align = True
         display_images = np.concatenate((color_image, depth_colormap), axis=1)
         t = time.time() - start
         # display on windows
-        print('Frame No: {}'.format(frame_cnt))
-        try:
-            print('FPS = {}'.format(1. / t))
-        except:
-            print('FPS = NaN')
-        cv2.namedWindow('Align Example', cv2.WINDOW_NORMAL) # may needa change autosize
-        cv2.imshow('Align Example', display_images)
+        if show:
+            print('Frame No: {}'.format(frame_cnt))
+            try:
+                print('FPS = {}'.format(1. / t))
+            except:
+                print('FPS = NaN')
+        
+        #cv2.namedWindow('Align Example', cv2.WINDOW_NORMAL) # may needa change autosize
+        #cv2.imshow('Align Example', display_images)
         key = cv2.waitKey(1)
         if key & 0xFF == ord('q') or key == 27:
             cv2.destroyAllWindows()

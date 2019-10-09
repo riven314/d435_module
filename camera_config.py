@@ -1,6 +1,5 @@
 """
 AUTHOR: Alex Lau
-
 SUMMARY
 Configure the RGBD camera handler before streaming, parameters include:
 1. depth scale for depth accuracy
@@ -10,7 +9,6 @@ Configure the RGBD camera handler before streaming, parameters include:
 5. minimum depth distance
 6. postprocessing on depth
 7. realtime streaming for sample tests
-
 LOG
 [06/10/2019]
 - current RGB must have same resolution as D
@@ -21,7 +19,6 @@ LOG
 import os
 import sys
 import time
-
 import pyrealsense2 as rs
 import numpy as np
 import cv2
@@ -35,11 +32,9 @@ class RGBDhandler:
             rgb_res, depth_res - tup, (width, height) e.g. (320, 240), (640, 480), (848, 480), (1280, 720)
             rgb_format, depth_format -- str, e.g. bgr8, z16 ... etc.
             fps -- int, frames per second
-
         e.g. 
         config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
         config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-
         doc of format you can take:
         https://intelrealsense.github.io/librealsense/python_docs/_generated/pyrealsense2.format.html#pyrealsense2.format.rgb8
         """
@@ -100,7 +95,6 @@ class RGBDhandler:
     def get_snapshot_np(self):
         """
         take a snapshot from streamline (after warmup), and then output the snapshot (as numpy array)
-
         output:
             color_image -- np array, (height, width, channel) (uint 8)
             depth_image -- np array, (height, width, channel) (uint 8)
@@ -108,10 +102,11 @@ class RGBDhandler:
         color_image, depth_image = stream_camera(config = self.config, frame_limit = 1, is_process_depth= False)
         return color_image, depth_image
 
-
+'''
 if __name__ == '__main__':
     resolution = (1280, 720)
     rs_handler = RGBDhandler(resolution, 'bgr8', resolution, 'z16', 30)
     rs_handler.get_config_info()
-    rs_handler.test_streamline(frame_limit = 200, is_process_depth = False)
+    rs_handler.test_streamline(frame_limit = 200, is_process_depth = False, show = True)
     #color_image, depth_image = rs_handler.get_snapshot_np()
+'''
