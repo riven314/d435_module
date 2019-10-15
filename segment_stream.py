@@ -1,3 +1,8 @@
+"""
+LOG
+[15/10/2019]
+- to do: add new window for model prediction
+"""
 import os
 import sys
 import time
@@ -49,9 +54,10 @@ def stream_caemra_wsegment(config, frame_limit, model, class_encoding, is_proces
         color_image = np.asanyarray(rgb_frame.get_data())
         depth_image = np.asanyarray(depth_frame.get_data())
         # feed to model
-        #model_out = model_predict(color_image, depth_image, 
-        #                          color_mean, color_std,
-        #                          model, class_encoding)
+        model_out = model_predict(color_image, depth_image, 
+                                  color_mean, color_std,
+                                  model, class_encoding,
+                                  is_cuda = True)
         if is_process_depth:
             depth_frame = filter_depth(depth_frame)
         colorizer = rs.colorizer() # colorizer looks nice
@@ -67,8 +73,13 @@ def stream_caemra_wsegment(config, frame_limit, model, class_encoding, is_proces
             print('FPS = {}'.format(1. / t))
         except:
             print('FPS = NaN')
+        # window for RGBD input
         cv2.namedWindow('Align Example', cv2.WINDOW_NORMAL) # may needa change autosize
         cv2.imshow('Align Example', display_images)
+        # window for segmentation result
+        if model_out is not None:
+            cv2.namedWindow('Prediction', cv2.WINDOW_NORMAL)
+            cv2.imshow('Prediction', model_out)
         key = cv2.waitKey(1)
         if key & 0xFF == ord('q') or key == 27:
             cv2.destroyAllWindows()
@@ -83,4 +94,4 @@ if __name__ == '__main__':
     config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
     config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
     model, class_encoding = setup_model(root = 'segmentation')
-    stream_caemra_wsegment(config, 50, model, class_encoding)    
+    stream_caemra_wsegment(config, 20, model, class_encoding)    
