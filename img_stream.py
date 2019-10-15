@@ -48,7 +48,7 @@ def filter_depth(frame):
     return frame
 
 
-def warmup_camera(config, n_trial = 10):
+def warmup_camera(config, n_trial = 20):
     """
     input:
         config -- rs.config class instance
@@ -92,6 +92,7 @@ def stream_camera(config, frame_limit, is_process_depth = False, is_align = True
             continue
         # massage two frames for display
         color_image = np.asanyarray(rgb_frame.get_data())
+        depth_image = np.asanyarray(depth_frame.get_data())
         if is_process_depth:
             depth_frame = filter_depth(depth_frame)
         colorizer = rs.colorizer() # colorizer looks nice
@@ -116,7 +117,7 @@ def stream_camera(config, frame_limit, is_process_depth = False, is_align = True
     pipeline.stop()
     cv2.destroyAllWindows()
     print('Streaming Stop!')
-    return color_image, depth_colormap
+    return color_image, depth_image, depth_colormap
 
 
 if __name__ == '__main__':

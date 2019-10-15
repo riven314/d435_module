@@ -95,9 +95,10 @@ class RGBDhandler:
         """
         streamline until # frame = frame_limit, apply depth postprocessing if is_process_depth = True
         """
-        stream_camera(config = self.config, frame_limit = frame_limit, is_process_depth = is_process_depth)
+        color_image, depth_image, depth_colormap = stream_camera(config = self.config, frame_limit = frame_limit, is_process_depth = is_process_depth)
+        return color_image, depth_image, depth_colormap
 
-    def get_snapshot_np(self):
+    def get_snapshot_np(self, name, is_align = True):
         """
         take a snapshot from streamline (after warmup), and then output the snapshot (as numpy array)
 
@@ -105,13 +106,34 @@ class RGBDhandler:
             color_image -- np array, (height, width, channel) (uint 8)
             depth_image -- np array, (height, width, channel) (uint 8)
         """
-        color_image, depth_image = stream_camera(config = self.config, frame_limit = 1, is_process_depth= False)
+        color_image, depth_image, depth_colormap = stream_camera(config = self.config, frame_limit = 1, is_process_depth= False, is_align = is_align)
+        color_path = os.path.join('test', 'npy_test_case', name + '_rgb.npy')
+        depth_1c_path = os.path.join('test', 'npy_test_case', name + '_d1c.npy')
+        depth_3c_path = os.path.join('test', 'npy_test_case', name + '_d3c.npy')
+        np.save(color_path, color_image)
+        np.save(depth_1c_path, depth_image)
+        np.save(depth_3c_path, depth_colormap)
+        print('RGB SAVE: {}, {}'.format(color_image.shape, color_path))
+        print('DEPTH 1C SAVE: {}, {}'.format(depth_image.shape, depth_1c_path))
+        print('DEPTH 3C SAVE: {}, {}'.format(depth_colormap.shape, depth_3c_path))
         return color_image, depth_image
 
 
 if __name__ == '__main__':
+    name = 'cls20'
     resolution = (1280, 720)
     rs_handler = RGBDhandler(resolution, 'bgr8', resolution, 'z16', 30)
     rs_handler.get_config_info()
-    rs_handler.test_streamline(frame_limit = 200, is_process_depth = False)
-    #color_image, depth_image = rs_handler.get_snapshot_np()
+    color_image, depth_image, depth_colormap = rs_handler.test_streamline(
+                                                frame_limit = 50, 
+                                                is_process_depth = False)
+    color_path = os.path.join('test', 'npy_test_case', name + '_rgb.npy')
+    depth_1c_path = os.path.join('test', 'npy_test_case', name + '_d1c.npy')
+    depth_3c_path = os.path.join('test', 'npy_test_case', name + '_d3c.npy')
+    np.save(color_path, color_image)
+    np.save(depth_1c_path, depth_image)
+    np.save(depth_3c_path, depth_colormap)
+    print('RGB SAVE: {}, {}'.format(color_image.shape, color_path))
+    print('DEPTH 1C SAVE: {}, {}'.format(depth_image.shape, depth_1c_path))
+    print('DEPTH 3C SAVE: {}, {}'.format(depth_colormap.shape, depth_3c_path))
+    #color_image, depth_image = rs_handler.get_snapshot_np(name = 'cls1')
