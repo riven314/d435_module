@@ -62,6 +62,23 @@ def warmup_camera(config, n_trial = 20):
     return pipeline
 
 
+def process_frame(rgb_frame, depth_frame):
+    """
+    assume rgb_frame or depth_frame is not None, process them into np array
+
+    output:
+        rgb_img -- np array, rgb image 
+        depth_img -- np array, 1 channel depth image
+        depth_colormap -- np array, 3 channel depth colormap
+    """
+    rgb_img = np.asanyarray(rgb_frame.get_data())
+    depth_img = np.asanyarray(depth_frame.get_data())
+    # get depth colormap
+    colorizer = rs.colorizer() # colorizer looks nice
+    depth_colormap = np.asanyarray(colorizer.colorize(depth_frame).get_data())
+    return rgb_img, depth_img, depth_colormap
+
+
 def stream_camera(config, frame_limit, is_process_depth = False, is_align = True):
     """
     input:

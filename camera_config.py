@@ -13,8 +13,6 @@ Configure the RGBD camera handler before streaming, parameters include:
 
 LOG
 [06/10/2019]
-- current RGB must have same resolution as D
-- parameters FPS has no impact on actual FPS
 - adjust depth accuracy
 - check if GPU is connected
 """
@@ -48,9 +46,14 @@ class RGBDhandler:
         self.DEPTH_RESOLUTION = depth_res
         self.DEPTH_FORMAT = depth_format
         self.FPS = fps
-        self.config = self._setup_config()
-        self.depth_scale = self.get_depth_scale()
-
+        self.config, self.profile, self.pipeline, self.depth_scale = None, None, None, None
+        self._setup_config()
+        self._setup_pipeline()
+        self._get_depth_scale()
+        self.get_config_info()
+        # handler for aligning RGB and depth image
+        self.align = rs.align(rs.stream.color)
+        
     def _setup_config(self):
         config = rs.config()
         rgb_w, rgb_h = self.RGB_RESOLUTION
@@ -60,8 +63,16 @@ class RGBDhandler:
         fps = self.FPS
         config.enable_stream(rs.stream.depth, depth_w, depth_h, depth_format, fps)
         config.enable_stream(rs.stream.color, rgb_w, rgb_h, rgb_format, fps)
-        print('Configuration Setup Completed!')
-        return config
+        self.config = config
+        print('self.config is set!')
+
+    def _setup_pipeline(self):
+        assert self.config is not None, '[SETUP ERROR] self.config NOT PROPERLY SETUP'
+        pipeline = rs.pipeline()
+        profile = pipeline.start(self.config)
+        self.pipeline = pipeline
+        self.profile = profile
+        print('self.pipeline and self.profile are set!')
 
     def _setup_format(self, format_str):
         assert format_str in ['bgr8', 'z16'], 'WRONG FORMAT INPUT: {}'.format(format_str)
@@ -73,12 +84,11 @@ class RGBDhandler:
             print('IT SHOULDNT HAPPEN...')
             return None
 
-    def get_depth_scale(self):
-        pipeline = rs.pipeline()
-        profile = pipeline.start(self.config)
-        depth_scale = profile.get_device().first_depth_sensor().get_depth_scale()
-        pipeline.stop()
-        return depth_scale
+    def _get_depth_scale(self):
+        assert self.pipeline is not None, '[SETUP ERROR] self.pipeline NOT PROPERLY SETUP'
+        assert self.profile is not None, '[SETUP ERROR] self.pipeline NOT PROPERLY SETUP'
+        self.depth_scale = self.profile.get_device().first_depth_sensor().get_depth_scale()
+        print('depth scale retrieved!')
 
     def get_config_info(self):
         print('\n########## RGB ##########')
@@ -118,12 +128,26 @@ class RGBDhandler:
         print('DEPTH 3C SAVE: {}, {}'.format(depth_colormap.shape, depth_3c_path))
         return color_image, depth_image
 
+    def get_raw_frame(self, is_align = True):
+        """
+        act like an iterator for backend web app. determine RGBD frames alignment here
+
+        output:
+            rgb_frame -- pyrealsense2 frame instance
+            depth_frame -- pyrealsense2 frame instance (1 channel)
+        """
+        frames = self.pipeline.wait_for_frames()
+        if is_align:
+            frames = self.align.process(frames)
+        rgb_frame = frames.get_color_frame()
+        depth_frame = frames.get_depth_frame()
+        return rgb_frame, depth_frame
+
 
 if __name__ == '__main__':
     name = 'cls20'
     resolution = (1280, 720)
     rs_handler = RGBDhandler(resolution, 'bgr8', resolution, 'z16', 30)
-    rs_handler.get_config_info()
     color_image, depth_image, depth_colormap = rs_handler.test_streamline(
                                                 frame_limit = 50, 
                                                 is_process_depth = False)
