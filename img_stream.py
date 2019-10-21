@@ -79,15 +79,15 @@ def process_frame(rgb_frame, depth_frame):
     return rgb_img, depth_img, depth_colormap
 
 
-def stream_camera(config, frame_limit, is_process_depth = False, is_align = True):
+def stream_camera(camera, frame_limit, is_process_depth = False, is_align = True):
     """
     input:
-        config -- rs.config class instance
+        camera -- RGBDhandler
         frame_limit -- int, number of frames to be print (if None, then endless stream)
         is_process_depth -- bool, whether apply filters on the depth frames
         is_align -- bool, whether align the viewpoint of RGB image and Depth image
     """
-    pipeline = warmup_camera(config)
+    #pipeline = warmup_camera(config)
     frame_cnt = 0
     if is_align:
         align = rs.align(rs.stream.color)
@@ -97,7 +97,7 @@ def stream_camera(config, frame_limit, is_process_depth = False, is_align = True
             break
         start = time.time()
         # frame waiting time is a bottleneck, lower resolution can improve this
-        frames = pipeline.wait_for_frames() 
+        frames = camera.pipeline.wait_for_frames() 
         frame_cnt += 1
         # RGBD alignment with respect to RGB image
         if is_align: 
@@ -131,7 +131,7 @@ def stream_camera(config, frame_limit, is_process_depth = False, is_align = True
         if key & 0xFF == ord('q') or key == 27:
             cv2.destroyAllWindows()
             break
-    pipeline.stop()
+    camera.pipeline.stop()
     cv2.destroyAllWindows()
     print('Streaming Stop!')
     return color_image, depth_image, depth_colormap
